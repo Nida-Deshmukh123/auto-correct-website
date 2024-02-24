@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medicine Form</title>
+    <style>
+        #medicine-input {
+            padding: 10px;
+            font-size: 16px;
+        }
+        #mic-status {
+            font-size: 12px;
+            color: green;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5"></div>
+    <form method="POST" action="/suggest" class="mt-4">
+        <div class="form-group">
+            <label for="medicine-input">Medicine:</label>
+            <input type="text" id="medicine-input" class="form-control" name="medicine-input" required onclick="toggleVoiceRecording()">
+            <div id="mic-status"></div>
+        </div>
+
+        <!-- Add this section for the dropdown -->
+        <div class="form-group mt-4">
+            <label for="suggested-medicines">Select a suggestion:</label>
+            <select id="suggested-medicines" class="form-control" onchange="selectSuggestion()">
+                {% if suggestions %}
+                    {% for suggestion in suggestions %}
+                        <option value="{{ suggestion['Word'] }}">{{ suggestion['Word'] }}</option>
+                    {% endfor %}
+                {% endif %}
+            </select>
+        </div>
+    </form>
+
+    <script>
+        let isMicOn = false;
+    
+        function toggleVoiceRecording() {
+            const recognition = new webkitSpeechRecognition() || new SpeechRecognition();
+            recognition.lang = 'en-US';
+    
+            if (!isMicOn) {
+                recognition.onstart = function () {
+                    document.getElementById('mic-status').innerText = 'Mic is ON';
+                };
+    
+                recognition.onresult = function (event) {
+                    const result = event.results[0][0].transcript;
+                    document.getElementById('medicine-input').value = result;
+                    document.getElementById('mic-status').innerText = '';
+                };
+    
+                recognition.onerror = function (event) {
+                    console.error('Speech recognition error:', event.error);
+                    document.getElementById('mic-status').innerText = 'Mic error';
+                };
+    
+                recognition.onend = function () {
+                    isMicOn = false;
+                };
+    
+                recognition.start();
+                isMicOn = true;
+            } else {
+                recognition.stop();
+                isMicOn = false;
+                document.getElementById('mic-status').innerText = 'Mic is OFF';
+            }
+        }
+    
+        function selectSuggestion() {
+            const selectedValue = document.getElementById('suggested-medicines').value;
+            document.getElementById('medicine-input').value = selectedValue;
+        }
+    
+        document.getElementById('suggested-medicines').addEventListener('keydown', function (event) {
+    if (event.key === 'Enter') {
+        // On Enter key press, set the value to the first suggestion
+        const suggestionsDropdown = document.getElementById('suggested-medicines');
+        if (suggestionsDropdown.options.length > 0) {
+            const firstSuggestion = suggestionsDropdown.options[0].value;
+            document.getElementById('medicine-input').value = firstSuggestion;
+
+            // Prevent form submission on Enter key press
+            event.preventDefault();
+            return false; // Stop propagation and default behavior
+        }
+    }
+});
+
+</script>
+</body>
+</html>
